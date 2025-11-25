@@ -34,6 +34,36 @@ const extractImageFromResponse = (response: any): string => {
 };
 
 /**
+ * Helper to safely get the API key from various environment configurations.
+ * Priorities:
+ * 1. process.env.API_KEY (System default)
+ * 2. import.meta.env.VITE_API_KEY (Vite default)
+ * 3. import.meta.env.VITE_GOOGLE_API_KEY (Alternative)
+ */
+const getApiKey = (): string => {
+  // 1. Check process.env (standard Node/Webpack/System)
+  if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+    return process.env.API_KEY;
+  }
+  
+  // 2. Check Vite environment variables (import.meta.env)
+  // Using try-catch/checks to avoid compilation errors if bundler doesn't support import.meta
+  try {
+    // @ts-ignore
+    if (typeof import.meta !== 'undefined' && import.meta.env) {
+      // @ts-ignore
+      if (import.meta.env.VITE_API_KEY) return import.meta.env.VITE_API_KEY;
+      // @ts-ignore
+      if (import.meta.env.VITE_GOOGLE_API_KEY) return import.meta.env.VITE_GOOGLE_API_KEY;
+    }
+  } catch (e) {
+    // Ignore errors accessing import.meta
+  }
+
+  return "";
+};
+
+/**
  * Generates an image based on a prompt.
  * Uses Gemini 2.5 Flash Image for both text-to-image and image-to-image.
  */
@@ -42,8 +72,12 @@ export const generateVariation = async (
   sourceImageBase64?: string | null
 ): Promise<string> => {
   try {
-    // Initialize client lazily with the environment variable strictly named API_KEY
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error("API Key not found. Please set VITE_API_KEY in your environment variables.");
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
 
     let contents: any;
 
@@ -100,8 +134,12 @@ export const editImage = async (
   instruction: string
 ): Promise<string> => {
   try {
-    // Initialize client lazily
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error("API Key not found. Please set VITE_API_KEY in your environment variables.");
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
 
     const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
 
