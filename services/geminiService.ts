@@ -1,9 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Initialize the client
-// NOTE: In a real app, ensure process.env.API_KEY is defined in your environment (e.g. .env file)
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-
 /**
  * Helper to extract image from GenerateContent response
  */
@@ -46,11 +42,14 @@ export const generateVariation = async (
   sourceImageBase64?: string | null
 ): Promise<string> => {
   try {
+    // Initialize client lazily with the environment variable strictly named API_KEY
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
     let contents: any;
 
     if (sourceImageBase64) {
       // IMAGE-TO-IMAGE (Variation)
-      // Remove header if present for cleaner processing, though SDK handles standard base64 often.
+      // Remove header if present for cleaner processing
       const cleanBase64 = sourceImageBase64.replace(/^data:image\/\w+;base64,/, '');
       
       contents = {
@@ -68,7 +67,6 @@ export const generateVariation = async (
       };
     } else {
       // TEXT-TO-IMAGE (First Generation)
-      // We use generateContent with gemini-2.5-flash-image for text-to-image as well
       contents = {
         parts: [
           {
@@ -82,7 +80,7 @@ export const generateVariation = async (
       model: 'gemini-2.5-flash-image',
       contents: contents,
       config: {
-        // No specific responseMimeType needed for this model to generate images in parts
+        // No specific responseMimeType needed for this model
       }
     });
 
@@ -102,6 +100,9 @@ export const editImage = async (
   instruction: string
 ): Promise<string> => {
   try {
+    // Initialize client lazily
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
     const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
 
     const response = await ai.models.generateContent({
