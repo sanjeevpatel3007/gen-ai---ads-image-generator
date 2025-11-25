@@ -1,0 +1,5 @@
+{
+  "name": "AI Gen: Variator Pro",
+  "description": "A node-based AI image variation editor for ad creatives using Gemini models.",
+  "requestFramePermissions": []
+}
